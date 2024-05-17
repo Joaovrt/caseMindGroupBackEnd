@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { toZonedTime, format } from 'date-fns-tz';
+import { AuthRequest } from '../types/AuthRequest'
 
 const prisma = new PrismaClient();
 
@@ -34,21 +35,21 @@ const ProductController = {
     },
 
     // Criar novo produto
-    async create(req: Request, res: Response) {
-        const { name, description, value, minimum_value, image, quantity = 0, userId } = req.body;
+    async create(req: AuthRequest, res: Response) {
+        const { name, description, value, minimum_value, image, quantity = 0} = req.body;
         const now = new Date();
         const timeZone = 'America/Sao_Paulo';
         const nowInBrazil = format(toZonedTime(now, timeZone), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx", { timeZone });
         try {
             const newProduct = await prisma.product.create({
-                data: { name, description, value, minimum_value, image }
+                data: { name, description, value, minimum_value, image, quantity }
             });
 
             // Criar movimento de entrada
             await prisma.movement.create({
                 data: {
                     productId: newProduct.id,
-                    userId: userId,
+                    userId: req.user.id,
                     type: 'entrada',
                     balance: quantity,
                     quantity: quantity,
@@ -64,14 +65,50 @@ const ProductController = {
     },
 
     // Atualizar produto por ID
-    async update(req: Request, res: Response) {
+    async update(req: AuthRequest, res: Response) {
         const productId = parseInt(req.params.id);
-        const { name, description, value, minimum_value, image } = req.body;
+        const { name, description, value, minimum_value, image, quantity } = req.body;
         try {
+            const product = await prisma.product.findUnique({
+                where: { id: productId }
+            });
+            if (!product) {
+                return res.status(404).json({ error: 'Produto não encontrado.' });
+            }
+            if(quantity!=product.quantity){
+                const now = new Date();
+                const timeZone = 'America/Sao_Paulo';
+                const nowInBrazil = format(toZonedTime(now, timeZone), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx", { timeZone });
+                if(quantity<product.quantity){
+                    await prisma.movement.create({
+                        data: {
+                            productId: product.id,
+                            userId: req.user.id,
+                            type: 'saida',
+                            balance: quantity,
+                            quantity: product.quantity-quantity,
+                            date: nowInBrazil
+                        }
+                    });
+                }
+                else{
+                    await prisma.movement.create({
+                        data: {
+                            productId: product.id,
+                            userId: req.user.id,
+                            type: 'entrada',
+                            balance: quantity,
+                            quantity: product.quantity+quantity,
+                            date: nowInBrazil
+                        }
+                    });
+                }
+            }
             const updatedProduct = await prisma.product.update({
                 where: { id: productId },
-                data: { name, description, value, minimum_value, image }
+                data: { name, description, value, minimum_value, image, quantity }
             });
+
             res.json(updatedProduct);
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);

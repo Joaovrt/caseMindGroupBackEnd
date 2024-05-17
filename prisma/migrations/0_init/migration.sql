@@ -18,6 +18,7 @@ CREATE TABLE `Product` (
     `value` DOUBLE NOT NULL,
     `minimum_value` INTEGER NOT NULL,
     `image` LONGBLOB NULL,
+    `quantity` INTEGER NOT NULL,
 
     UNIQUE INDEX `Product_name_key`(`name`),
     UNIQUE INDEX `Product_description_key`(`description`),

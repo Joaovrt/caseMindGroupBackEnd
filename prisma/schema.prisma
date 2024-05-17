@@ -25,6 +25,7 @@ model Product {
   value       Float
   minimum_value Int
   image       Bytes?
+  quantity    Int
   movements   Movement[]
 }
 
