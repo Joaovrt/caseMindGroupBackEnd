@@ -17,16 +17,18 @@ const UserController = {
             if (!user) {
                 return response.status(404).json({ error: 'Usuário ou senha incorretos.' });
             }
-            if (await bcrypt.compare(password, user.password)&&user.active) {
-                const token = jwt.sign({ id: user.id, name:user.name, email:user.email }, 'suaChaveSecreta', { expiresIn: '2d'});
-                response.status(200).json({
+            else if (await bcrypt.compare(password, user.password) && user.active) {
+                const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, 'suaChaveSecreta', { expiresIn: '2d' });
+                return response.status(200).json({  // Adicione um return aqui
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
                     token: token
                 });
+            } else {
+                return response.status(401).json({ error: 'Usuário ou senha incorretos.' }); // Adicione um return aqui
             }
-            else {
-                response.status(401).send('Usuário ou senha incorretos.');
-            }
-            response.json(user);
+            
         } catch (error) {
             console.error('Erro ao buscar usuário:', error);
             response.status(500).json({ error: 'Erro ao buscar usuário.' });
