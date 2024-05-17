@@ -1,21 +1,20 @@
 import { Router } from 'express';
 import UserController from './controllers/userController';
-//import ProductController from './controllers/productController';
+import ProductController from './controllers/productController';
 import { auth } from './middlewares/auth';
 
 export const router = Router();
 
-// router.post('/login', UserController.login);
+router.post('/api/v1/login', UserController.login);
 
-// router.use(auth);
-router.get('/users',UserController.listAll);
-router.get('/user/:id', UserController.getUserById);
-router.post('/user', UserController.create);
-router.put('/user/:id', UserController.update);
-router.delete('/user/:id', UserController.delete);
+router.use(auth);
+router.get('/api/v1/users',UserController.listAll);
+router.get('/api/v1/user/:id', UserController.getUserById);
+router.post('/api/v1/user', UserController.create);
+router.put('/api/v1/user/:id', UserController.update);
 
-// router.get('/products',ProductController.listAll);
-// router.get('/product/:id', ProductController.getUserById);
-// router.post('/product', ProductController.create);
-// router.put('/product/:id', ProductController.update);
-// router.delete('/product/:id', ProductController.delete);
+router.get('/api/v1/products',ProductController.listAll);
+router.get('/api/v1/product/:id', ProductController.getProductById);
+router.post('/api/v1/product', ProductController.create);
+router.put('/api/v1/product/:id', ProductController.update);
+router.delete('/api/v1/product/:id', ProductController.delete);

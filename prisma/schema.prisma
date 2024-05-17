@@ -10,10 +10,11 @@ generator client {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String
-  email    String   @unique
-  password String
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  password  String
+  active    Boolean    @default(true)
   movements Movement[]
 }
 
@@ -22,6 +23,7 @@ model Product {
   name        String    @unique
   description String    @unique
   value       Float
+  minimum_value Int
   image       Bytes?
   movements   Movement[]
 }
@@ -32,8 +34,9 @@ model Movement {
   userId      Int
   type        MovementType
   quantity    Int
+  balance     Int
   date        DateTime
-  product     Product     @relation(fields: [productId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id])
 }
 
