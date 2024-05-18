@@ -36,33 +36,36 @@ const ProductController = {
 
     // Criar novo produto
     async create(req: AuthRequest, res: Response) {
-        const { name, description, value, minimum_value, image, quantity = 0} = req.body;
+        const { name, description, value, minimum_value, quantity = 0 } = req.body;
+        const image = req.file ? req.file.buffer : null;
         const now = new Date();
         const timeZone = 'America/Sao_Paulo';
-        const nowInBrazil = format(toZonedTime(now, timeZone), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx", { timeZone });
+        const nowInBrazil = format(now, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx", { timeZone });
+    
         try {
             const newProduct = await prisma.product.create({
-                data: { name, description, value, minimum_value, image, quantity }
+                data: { name, description, value: parseFloat(value), minimum_value: parseInt(minimum_value, 10), image, quantity: parseInt(quantity, 10) }
             });
-
+    
             // Criar movimento de entrada
             await prisma.movement.create({
                 data: {
                     productId: newProduct.id,
                     userId: req.user.id,
                     type: 'entrada',
-                    balance: quantity,
-                    quantity: quantity,
+                    balance: parseInt(quantity, 10),
+                    quantity: parseInt(quantity, 10),
                     date: nowInBrazil
                 }
             });
-
+    
             res.status(201).json(newProduct);
         } catch (error) {
             console.error('Erro ao criar produto:', error);
             res.status(500).json({ error: 'Erro ao criar produto.' });
         }
     },
+
 
     // Atualizar produto por ID
     async update(req: AuthRequest, res: Response) {
