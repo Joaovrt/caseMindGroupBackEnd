@@ -18,5 +18,7 @@ router.put('/api/v1/user/:id', UserController.update);
 router.get('/api/v1/products',ProductController.listAll);
 router.get('/api/v1/product/:id', ProductController.getProductById);
 router.post('/api/v1/product',upload.single('image'), ProductController.create);
-router.put('/api/v1/product/:id', ProductController.update);
+router.put('/api/v1/product/:id',upload.single('image'), ProductController.update);
 router.delete('/api/v1/product/:id', ProductController.delete);
+router.post('/api/v1/product/movement/:id', ProductController.movement);
+router.get('/api/v1/product/movements/:id', ProductController.listMovements);
