@@ -65,11 +65,11 @@ const UserController = {
 
     // Criar novo usuário
     async create(req: Request, res: Response) {
-        const { name, email, password } = req.body;
+        const { name, email, password, active = true } = req.body;
         const encryptedPassword = await bcrypt.hash(password, 10);
         try {
             const newUser = await prisma.user.create({
-                data: { name, email, password: encryptedPassword }
+                data: { name, email, password: encryptedPassword, active }
             });
             res.status(201).json(newUser);
         } catch (error) {
@@ -82,17 +82,49 @@ const UserController = {
     async update(req: Request, res: Response) {
         const userId = parseInt(req.params.id);
         const { name, email, password, active } = req.body;
+        var newPassword = password ? password : null
         try {
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+            if (!user) {
+                return res.status(404).json({ error: 'Usuário não encontrado.' });
+            }
+            if(newPassword==null)
+                newPassword = user.password
+            else
+                newPassword = await bcrypt.hash(newPassword, 10);
             const updatedUser = await prisma.user.update({
                 where: { id: userId },
-                data: { name, email, password, active }
+                data: { name, email, password:newPassword, active }
             });
             res.json(updatedUser);
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
             res.status(500).json({ error: 'Erro ao atualizar usuário.' });
         }
-    }
+    },
+
+    async listMovements(req: Request, res: Response) {
+        const userId = parseInt(req.params.id);
+      
+        try {
+          const movements = await prisma.movement.findMany({
+            where: {
+              userId: userId,
+            },
+            include: {
+              product: true,
+              user: true,
+            },
+          });
+          
+          res.json(movements);
+        } catch (error) {
+          console.error('Error fetching movements:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      }
 };
 
 export default UserController;

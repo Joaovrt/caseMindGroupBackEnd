@@ -14,6 +14,7 @@ router.get('/api/v1/users',UserController.listAll);
 router.get('/api/v1/user/:id', UserController.getUserById);
 router.post('/api/v1/user', UserController.create);
 router.put('/api/v1/user/:id', UserController.update);
+router.get('/api/v1/user/movements/:id', UserController.listMovements);
 
 router.get('/api/v1/products',ProductController.listAll);
 router.get('/api/v1/product/:id', ProductController.getProductById);
