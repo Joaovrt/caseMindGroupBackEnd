@@ -12,11 +12,11 @@ export const auth = async (request: AuthRequest, response: Response, next: NextF
 
     try {
         const decodedToken = await jwt.verify(token, 'suaChaveSecreta');
-        // Armazena o payload decodificado no objeto request
+        
         request.user = decodedToken;
         next();
     } catch (error) {
-        console.error(error); // Adicionado para verificar se há erros de verificação do token
+        console.error(error);
         return response.status(401).json({ error: 'Unauthorized', message: 'Invalid auth token!' });
     }
 }

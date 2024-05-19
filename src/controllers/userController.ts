@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -19,14 +19,14 @@ const UserController = {
             }
             else if (await bcrypt.compare(password, user.password) && user.active) {
                 const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, 'suaChaveSecreta', { expiresIn: '2d' });
-                return response.status(200).json({  // Adicione um return aqui
+                return response.status(200).json({
                     id: user.id,
                     name: user.name,
                     email: user.email,
                     token: token
                 });
             } else {
-                return response.status(401).json({ error: 'Usuário ou senha incorretos.' }); // Adicione um return aqui
+                return response.status(401).json({ error: 'Usuário ou senha incorretos.' });
             }
             
         } catch (error) {
@@ -35,7 +35,6 @@ const UserController = {
         }
     },
 
-    // Listar todos os usuários
     async listAll(req: Request, res: Response) {
         try {
             const users = await prisma.user.findMany();
@@ -46,7 +45,6 @@ const UserController = {
         }
     },
 
-    // Obter usuário por ID
     async getUserById(req: Request, res: Response) {
         const userId = parseInt(req.params.id);
         try {
@@ -63,7 +61,6 @@ const UserController = {
         }
     },
 
-    // Criar novo usuário
     async create(req: Request, res: Response) {
         const { name, email, password, active = true } = req.body;
         const encryptedPassword = await bcrypt.hash(password, 10);
@@ -73,12 +70,20 @@ const UserController = {
             });
             res.status(201).json(newUser);
         } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                if (error.code === 'P2002') {
+                    const target = (error.meta && error.meta.target) as string[];
+    
+                    if (target.includes('email')) {
+                        return res.status(400).json({ error: 'E-mail de usuário já cadastrado.' });
+                    }
+                }
+            }
             console.error('Erro ao criar usuário:', error);
             res.status(500).json({ error: 'Erro ao criar usuário.' });
         }
     },
 
-    // Atualizar usuário por ID
     async update(req: Request, res: Response) {
         const userId = parseInt(req.params.id);
         const { name, email, password, active } = req.body;
@@ -100,8 +105,17 @@ const UserController = {
             });
             res.json(updatedUser);
         } catch (error) {
-            console.error('Erro ao atualizar usuário:', error);
-            res.status(500).json({ error: 'Erro ao atualizar usuário.' });
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                if (error.code === 'P2002') {
+                    const target = (error.meta && error.meta.target) as string[];
+    
+                    if (target.includes('email')) {
+                        return res.status(400).json({ error: 'E-mail de usuário já cadastrado.' });
+                    }
+                }
+            }
+            console.error('Erro ao criar usuário:', error);
+            res.status(500).json({ error: 'Erro ao criar usuário.' });
         }
     },
 

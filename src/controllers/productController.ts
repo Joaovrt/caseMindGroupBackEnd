@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { toZonedTime, format } from 'date-fns-tz';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { format } from 'date-fns-tz';
 import { AuthRequest } from '../types/AuthRequest'
 
 const prisma = new PrismaClient();
 
 const ProductController = {
-    // Listar todos os produtos
+    
     async listAll(req: Request, res: Response) {
         try {
             const products = await prisma.product.findMany();
@@ -17,7 +17,6 @@ const ProductController = {
         }
     },
 
-    // Obter produto por ID
     async getProductById(req: Request, res: Response) {
         const productId = parseInt(req.params.id);
         try {
@@ -34,7 +33,6 @@ const ProductController = {
         }
     },
 
-    // Criar novo produto
     async create(req: AuthRequest, res: Response) {
         const { name, description, value, minimum_value, quantity = 0 } = req.body;
         const image = req.file ? req.file.buffer : null;
@@ -44,10 +42,16 @@ const ProductController = {
     
         try {
             const newProduct = await prisma.product.create({
-                data: { name, description, value: parseFloat(value), minimum_value: parseInt(minimum_value, 10), image, quantity: parseInt(quantity, 10) }
+                data: {
+                    name,
+                    description,
+                    value: parseFloat(value),
+                    minimum_value: parseInt(minimum_value, 10),
+                    image,
+                    quantity: parseInt(quantity, 10)
+                }
             });
     
-            // Criar movimento de entrada
             await prisma.movement.create({
                 data: {
                     productId: newProduct.id,
@@ -61,13 +65,22 @@ const ProductController = {
     
             res.status(201).json(newProduct);
         } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                if (error.code === 'P2002') {
+                    const target = (error.meta && error.meta.target) as string[];
+    
+                    if (target.includes('name')) {
+                        return res.status(400).json({ error: 'Nome do produto já existe.' });
+                    } else if (target.includes('description')) {
+                        return res.status(409).json({ error: 'Descrição do produto já existe.' });
+                    }
+                }
+            }
             console.error('Erro ao criar produto:', error);
             res.status(500).json({ error: 'Erro ao criar produto.' });
         }
     },
 
-
-    // Atualizar produto por ID
     async update(req: AuthRequest, res: Response) {
         const productId = parseInt(req.params.id);
         const { name, description, value, minimum_value } = req.body;
@@ -99,12 +112,22 @@ const ProductController = {
     
             res.json(updatedProduct);
         } catch (error) {
-            console.error('Erro ao atualizar produto:', error);
-            res.status(500).json({ error: 'Erro ao atualizar produto.' });
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                if (error.code === 'P2002') {
+                    const target = (error.meta && error.meta.target) as string[];
+    
+                    if (target.includes('name')) {
+                        return res.status(400).json({ error: 'Nome do produto já existe.' });
+                    } else if (target.includes('description')) {
+                        return res.status(409).json({ error: 'Descrição do produto já existe.' });
+                    }
+                }
+            }
+            console.error('Erro ao criar produto:', error);
+            res.status(500).json({ error: 'Erro ao criar produto.' });
         }
     },     
 
-    // Deletar produto por ID
     async delete(req: Request, res: Response) {
         const productId = parseInt(req.params.id);
         try {
@@ -152,7 +175,7 @@ const ProductController = {
                 where: { id: productId },
                 data: updatedData,
             });
-            // Criar movimento de entrada
+            
             await prisma.movement.create({
                 data: {
                     productId: productId,
