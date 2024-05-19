@@ -206,6 +206,9 @@ const ProductController = {
               product: true,
               user: true,
             },
+            orderBy: {
+                id: 'desc',
+            },
           });
           
           res.json(movements);

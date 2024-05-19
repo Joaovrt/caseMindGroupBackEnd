@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { AuthRequest } from '../types/AuthRequest';
 
 const prisma = new PrismaClient();
 
@@ -84,7 +85,7 @@ const UserController = {
         }
     },
 
-    async update(req: Request, res: Response) {
+    async update(req: AuthRequest, res: Response) {
         const userId = parseInt(req.params.id);
         const { name, email, password, active } = req.body;
         var newPassword = password ? password : null
@@ -95,6 +96,8 @@ const UserController = {
             if (!user) {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
+            if(userId==req.user.id&&!active)
+                return res.status(409).json({ error: 'Não é possível inativar a si mesmo' });
             if(newPassword==null)
                 newPassword = user.password
             else
@@ -130,6 +133,9 @@ const UserController = {
             include: {
               product: true,
               user: true,
+            },
+            orderBy: {
+                id: 'desc',
             },
           });
           
