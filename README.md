@@ -5,6 +5,8 @@ Execute:
     npm install
     prisma generate client
     npm run dev
+Caso ocorra problemas com a biblioteca de datas, instale-a manualmente:
+    npm install date-fns --save
 
 ## Usuário já cadastrado no banco
 e-mail: joao@mail.com
