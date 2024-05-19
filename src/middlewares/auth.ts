@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../types/AuthRequest'
 
@@ -11,7 +11,7 @@ export const auth = async (request: AuthRequest, response: Response, next: NextF
     const [, token] = authHeader.split(' ');
 
     try {
-        const decodedToken = await jwt.verify(token, 'suaChaveSecreta');
+        const decodedToken = jwt.verify(token, 'suaChaveSecreta');
         
         request.user = decodedToken;
         next();
